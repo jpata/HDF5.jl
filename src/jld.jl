@@ -343,6 +343,12 @@ end
 # Dict
 function read{T<:Associative}(obj::JldDataset, ::Type{T})
     kv = getrefs(obj, Any)
+    
+    #In case of DataFrame, kv[1] = Array{DataArray{X}}, kv[2] = Index
+    if full_typename(T) == "DataFrames.DataFrame"
+        kv[1], kv[2] = map(string, kv[2].names), kv[1]
+    end
+ 
     ret = T()
     for (cn, c) in zip(kv[1], kv[2])
         ret[cn] = c
@@ -575,7 +581,7 @@ write(parent::Union(JldFile, JldGroup), name::ASCIIString, t::Tuple) = write(par
 # Associative (Dict)
 function write(parent::Union(JldFile, JldGroup), name::ASCIIString, d::Associative)
     tn = full_typename(typeof(d))
-    if tn == "DataFrame"
+    if tn == "DataFrames.DataFrame"
         return write_composite(parent, name, d)
     end
     n = length(d)
